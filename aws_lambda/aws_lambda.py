@@ -59,7 +59,7 @@ def cleanup_old_versions(
 
         client = get_client(
             'lambda', profile_name, aws_access_key_id, aws_secret_access_key,
-            cfg.get('region'),
+            cfg.get('region'), cfg
         )
 
         response = client.list_versions_by_function(
@@ -465,19 +465,19 @@ def get_role_name(region, account_id, role):
 
 def get_account_id(
     profile_name, aws_access_key_id, aws_secret_access_key,
-    region=None,
+    region=None, config=None
 ):
     """Query STS for a users' account_id"""
     client = get_client(
         'sts', profile_name, aws_access_key_id, aws_secret_access_key,
-        region,
+        region
     )
     return client.get_caller_identity().get('Account')
 
 
 def get_client(
     client, profile_name, aws_access_key_id, aws_secret_access_key,
-    region=None,
+    region=None, config=None
 ):
     """Shortcut for getting an initialized instance of the boto3 client."""
 
@@ -487,7 +487,12 @@ def get_client(
         aws_secret_access_key=aws_secret_access_key,
         region_name=region,
     )
-    return boto3.client(client)
+    client_args = dict()
+
+    if config is not None and is_local(config):
+        client_args["endpoint_url"] = get_endpoint_url(config, client)
+
+    return boto3.client(client, **client_args)
 
 
 def create_function(cfg, path_to_zip_file, use_s3=False, s3_file=None):
@@ -501,9 +506,9 @@ def create_function(cfg, path_to_zip_file, use_s3=False, s3_file=None):
 
     account_id = get_account_id(
         profile_name, aws_access_key_id, aws_secret_access_key, cfg.get(
-            'region',
+            'region', cfg
         ),
-    )
+    ) if not is_local(cfg) else '000000000000'
     role = get_role_name(
         cfg.get('region'), account_id,
         cfg.get('role', 'lambda_basic_execution'),
@@ -511,7 +516,7 @@ def create_function(cfg, path_to_zip_file, use_s3=False, s3_file=None):
 
     client = get_client(
         'lambda', profile_name, aws_access_key_id, aws_secret_access_key,
-        cfg.get('region'),
+        cfg.get('region'), cfg
     )
 
     # Do we prefer development variable over config?
@@ -594,9 +599,9 @@ def update_function(
 
     account_id = get_account_id(
         profile_name, aws_access_key_id, aws_secret_access_key, cfg.get(
-            'region',
+            'region', cfg
         ),
-    )
+    ) if not is_local(cfg) else '000000000000'
     role = get_role_name(
         cfg.get('region'), account_id,
         cfg.get('role', 'lambda_basic_execution'),
@@ -604,7 +609,7 @@ def update_function(
 
     client = get_client(
         'lambda', profile_name, aws_access_key_id, aws_secret_access_key,
-        cfg.get('region'),
+        cfg.get('region'), cfg
     )
 
     # Do we prefer development variable over config?
@@ -685,7 +690,7 @@ def upload_s3(cfg, path_to_zip_file, *use_s3):
     aws_secret_access_key = cfg.get('aws_secret_access_key')
     client = get_client(
         's3', profile_name, aws_access_key_id, aws_secret_access_key,
-        cfg.get('region'),
+        cfg.get('region'), cfg
     )
     byte_stream = b''
     with open(path_to_zip_file, mode='rb') as fh:
@@ -725,7 +730,7 @@ def get_function_config(cfg):
     aws_secret_access_key = cfg.get('aws_secret_access_key')
     client = get_client(
         'lambda', profile_name, aws_access_key_id, aws_secret_access_key,
-        cfg.get('region'),
+        cfg.get('region'), cfg
     )
 
     try:
@@ -742,3 +747,20 @@ def read_cfg(path_to_config_file, profile_name):
     elif 'AWS_PROFILE' in os.environ:
         cfg['profile'] = os.environ['AWS_PROFILE']
     return cfg
+
+
+def is_local(config):
+    if config.get('endpoint_url_lambda') is None or config.get('endpoint_url_s3') is None:
+        return False
+    return True
+
+
+def get_endpoint_url(config, client):
+    if not is_local(config):
+        return None
+    if client is 'lambda':
+        return config.get('endpoint_url_lambda')
+    elif client is 's3':
+        return config.get('endpoint_url_s3')
+    else:
+        return None
