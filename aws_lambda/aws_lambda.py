@@ -5,6 +5,8 @@ import hashlib
 import json
 import logging
 import os
+import re
+import subprocess
 import sys
 import time
 from collections import defaultdict
@@ -24,7 +26,6 @@ from .helpers import get_environment_variable_value
 from .helpers import mkdir
 from .helpers import read
 from .helpers import timestamp
-
 
 ARN_PREFIXES = {
     'us-gov-west-1': 'aws-us-gov',
@@ -83,9 +84,9 @@ def cleanup_old_versions(
 
 
 def deploy(
-        src, requirements=None, local_package=None,
-        config_file='config.yaml', profile_name=None,
-        preserve_vpc=False
+    src, requirements=None, local_package=None,
+    config_file='config.yaml', profile_name=None,
+    preserve_vpc=False
 ):
     """Deploys a new function to AWS Lambda.
 
@@ -155,8 +156,8 @@ def deploy_s3(
 
 
 def upload(
-        src, requirements=None, local_package=None,
-        config_file='config.yaml', profile_name=None,
+    src, requirements=None, local_package=None,
+    config_file='config.yaml', profile_name=None,
 ):
     """Uploads a new function to AWS S3.
 
@@ -400,21 +401,16 @@ def _install_packages(path, packages):
     :param list packages:
         A list of packages to be installed via pip.
     """
-    def _filter_blacklist(package):
-        blacklist = ['-i', '#', 'Python==', 'python-lambda==']
-        return all(package.startswith(entry) is False for entry in blacklist)
-    filtered_packages = filter(_filter_blacklist, packages)
+    bad_packages = ['-i', '#', 'Python==', 'python-lambda']
+    blacklist = re.compile('|'.join([re.escape(pack) for pack in bad_packages]))
+    filtered_packages = [pack for pack in packages if not blacklist.search(pack)]
+
     for package in filtered_packages:
         if package.startswith('-e '):
             package = package.replace('-e ', '')
 
         print('Installing {package}'.format(package=package))
-        pip_major_version = [int(v) for v in pip.__version__.split('.')][0]
-        if pip_major_version >= 10:
-            from pip._internal import main
-            main(['install', package, '-t', path, '--ignore-installed'])
-        else:
-            pip.main(['install', package, '-t', path, '--ignore-installed'])
+        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package, '-t', path, '--ignore-installed'])
 
 
 def pip_install_to_target(path, requirements=None, local_package=None):
@@ -587,7 +583,7 @@ def create_function(cfg, path_to_zip_file, use_s3=False, s3_file=None):
 
 
 def update_function(
-        cfg, path_to_zip_file, existing_cfg, use_s3=False, s3_file=None, preserve_vpc=False
+    cfg, path_to_zip_file, existing_cfg, use_s3=False, s3_file=None, preserve_vpc=False
 ):
     """Updates the code of an existing Lambda function"""
 
