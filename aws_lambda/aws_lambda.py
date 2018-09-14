@@ -411,6 +411,10 @@ def _install_packages(path, packages):
         if package.startswith('-e '):
             package = package.replace('-e ', '')
         if any(i in package for i in indexes):
+            # we actually want the --index_url=whatever syntax
+            if ' ' in package:
+                tmp = package.split(" ")
+                package = '='.join(x for x in tmp)
             extra_args.append(package)
             continue
 
