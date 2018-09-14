@@ -401,16 +401,24 @@ def _install_packages(path, packages):
     :param list packages:
         A list of packages to be installed via pip.
     """
-    bad_packages = ['-i', '#', 'Python==', 'python-lambda']
+    bad_packages = ['#', 'Python==', 'python-lambda']
     blacklist = re.compile('|'.join([re.escape(pack) for pack in bad_packages]))
     filtered_packages = [pack for pack in packages if not blacklist.search(pack)]
+    indexes = ['-i', '--index-url', '--extra-index-url']
 
+    extra_args = []
     for package in filtered_packages:
         if package.startswith('-e '):
             package = package.replace('-e ', '')
+        if any(i in package for i in indexes):
+            extra_args.append(package)
+            continue
 
         print('Installing {package}'.format(package=package))
-        subprocess.check_call([sys.executable, '-m', 'pip', 'install', package, '-t', path, '--ignore-installed'])
+        call = [sys.executable, '-m', 'pip', 'install', package, '-t', path, '--ignore-installed']
+        if extra_args:
+            call.extend(extra_args)
+        subprocess.check_call(call)
 
 
 def pip_install_to_target(path, requirements=None, local_package=None):
