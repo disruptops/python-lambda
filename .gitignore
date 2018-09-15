@@ -60,6 +60,6 @@ target/
 
 # Jetbrains/PyCharm project files
 .idea/
-
+*.iml
 # vim swap files
 .*.sw?
