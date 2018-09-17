@@ -408,6 +408,8 @@ def _install_packages(path, packages):
 
     extra_args = []
     for package in filtered_packages:
+        if package == "":
+            continue
         if package.startswith('-e '):
             package = package.replace('-e ', '')
         if any(i in package for i in indexes):
