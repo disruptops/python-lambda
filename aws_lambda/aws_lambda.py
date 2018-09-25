@@ -308,6 +308,20 @@ def build(
         with open(os.path.join(path_to_temp, 'zope/__init__.py'), 'wb'):
             pass
 
+    if 'dops' in os.listdir(path_to_temp):
+        print(
+            'dops packages detected; fixing dops package paths to '
+            'make them importable.',
+        )
+
+        # Touch.
+        with open(os.path.join(path_to_temp, 'dops/__init__.py'), 'wb'):
+            pass
+
+        os.makedirs(os.path.dirname(os.path.join(path_to_temp, 'dops/plugins/__init__.py')), exist_ok=True)
+        with open(os.path.join(path_to_temp, 'dops/plugins/__init__.py'), 'wb'):
+            pass
+
     # Gracefully handle whether ".zip" was included in the filename or not.
     output_filename = (
         '{0}.zip'.format(output_filename)
