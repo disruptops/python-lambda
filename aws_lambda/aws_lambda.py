@@ -421,7 +421,7 @@ def _install_packages(path, packages):
             continue
 
         print('Installing {package}'.format(package=package))
-        call = [sys.executable, '-m', 'pip', 'install', package, '-t', path, '--ignore-installed']
+        call = [sys.executable, '-m', 'pip', 'install', package, '-t', path, '--ignore-installed', '--no-cache-dir']
         if extra_args:
             call.extend(extra_args)
         subprocess.check_call(call)
