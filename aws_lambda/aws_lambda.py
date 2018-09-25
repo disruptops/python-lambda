@@ -593,7 +593,8 @@ def create_function(cfg, path_to_zip_file, use_s3=False, s3_file=None):
             },
         )
 
-    client.create_function(**kwargs)
+    ret = client.create_function(**kwargs)
+    print(f"Your function ARN is {ret['FunctionArn']}")
 
 
 def update_function(
@@ -689,6 +690,7 @@ def update_function(
                 client.untag_resource(Resource=ret['FunctionArn'],
                                       TagKeys=list(existing_cfg['Tags'].keys()))
             client.tag_resource(Resource=ret['FunctionArn'], Tags=tags)
+    print(f"Your function ARN is {ret['FunctionArn']}")
 
 
 def upload_s3(cfg, path_to_zip_file, *use_s3):
