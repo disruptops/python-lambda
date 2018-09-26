@@ -84,7 +84,7 @@ def cleanup_old_versions(
 
 
 def deploy(
-    src, requirements=None, local_package=None,
+    src, requirements='requirements.txt', local_package=None,
     config_file='config.yaml', profile_name=None,
     preserve_vpc=False
 ):
@@ -119,7 +119,7 @@ def deploy(
 
 
 def deploy_s3(
-    src, requirements=None, local_package=None,
+    src, requirements='requirements.txt', local_package=None,
     config_file='config.yaml', profile_name=None,
     preserve_vpc=False
 ):
@@ -156,7 +156,7 @@ def deploy_s3(
 
 
 def upload(
-    src, requirements=None, local_package=None,
+    src, requirements='requirements.txt', local_package=None,
     config_file='config.yaml', profile_name=None,
 ):
     """Uploads a new function to AWS S3.
@@ -264,7 +264,7 @@ def init(src, minimal=False):
 
 
 def build(
-    src, requirements=None, local_package=None,
+    src, requirements='requirements.txt', local_package=None,
     config_file='config.yaml', profile_name=None,
 ):
     """Builds the file bundle.
@@ -404,81 +404,18 @@ def get_handler_filename(handler):
     return '{0}.py'.format(module_name)
 
 
-def _install_packages(path, packages):
-    """Install all packages listed to the target directory.
+def _install_packages(path, requirements):
+    """Install all packages listed to the target directory. """
 
-    Ignores any package that includes Python itself and python-lambda as well
-    since its only needed for deploying and not running the code
-
-    :param str path:
-        Path to copy installed pip packages to.
-    :param list packages:
-        A list of packages to be installed via pip.
-    """
-    bad_packages = ['#', 'Python==', 'python-lambda']
-    blacklist = re.compile('|'.join([re.escape(pack) for pack in bad_packages]))
-    filtered_packages = [pack for pack in packages if not blacklist.search(pack)]
-    indexes = ['-i', '--index-url', '--extra-index-url']
-
-    extra_args = []
-    for package in filtered_packages:
-        if package == "":
-            continue
-        if package.startswith('-e '):
-            package = package.replace('-e ', '')
-        if any(i in package for i in indexes):
-            # we actually want the --index_url=whatever syntax
-            if ' ' in package:
-                tmp = package.split(" ")
-                package = '='.join(x for x in tmp)
-            extra_args.append(package)
-            continue
-
-        print('Installing {package}'.format(package=package))
-        call = [sys.executable, '-m', 'pip', 'install', package, '-t', path, '--ignore-installed', '--no-cache-dir']
-        if extra_args:
-            call.extend(extra_args)
-        subprocess.check_call(call)
+    call = [sys.executable, '-m', 'pip', 'install', '-t', path, '-r', requirements, '--ignore-installed', '--no-cache-dir']
+    subprocess.check_call(call)
 
 
-def pip_install_to_target(path, requirements=None, local_package=None):
+def pip_install_to_target(path, requirements, local_package=None):
     """For a given active virtualenv, gather all installed pip packages then
-    copy (re-install) them to the path provided.
+    copy (re-install) them to the path provided. """
 
-    :param str path:
-        Path to copy installed pip packages to.
-    :param str requirements:
-        If set, only the packages in the supplied requirements file are
-        installed.
-        If not set then installs all packages found via pip freeze.
-    :param str local_package:
-        The path to a local package with should be included in the deploy as
-        well (and/or is not available on PyPi)
-    """
-    packages = []
-    if not requirements:
-        print('Gathering pip packages')
-        pip_major_version = [int(v) for v in pip.__version__.split('.')][0]
-        if pip_major_version >= 10:
-            from pip._internal import operations
-            packages.extend(operations.freeze.freeze())
-        else:
-            packages.extend(pip.operations.freeze.freeze())
-    else:
-        if os.path.exists(requirements):
-            print('Gathering requirement packages')
-            data = read(requirements)
-            packages.extend(data.splitlines())
-
-    if not packages:
-        print('No dependency packages installed!')
-
-    if local_package is not None:
-        if not isinstance(local_package, (list, tuple)):
-            local_package = [local_package]
-        for l_package in local_package:
-            packages.append(l_package)
-    _install_packages(path, packages)
+    _install_packages(path, requirements=requirements)
 
 
 def get_role_name(region, account_id, role):

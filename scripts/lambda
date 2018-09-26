@@ -49,7 +49,7 @@ def init(folder, minimal):
 )
 @click.option(
     '--requirements',
-    default=None,
+    default='requirements.txt',
     type=click.Path(),
     help='Install packages from supplied requirements file.',
 )
@@ -108,7 +108,7 @@ def invoke(event_file, config_file, profile, verbose):
 )
 @click.option(
     '--requirements',
-    default=None,
+    default='requirements.txt',
     type=click.Path(),
     help='Install all packages defined in supplied requirements file',
 )
@@ -148,7 +148,7 @@ def deploy(requirements, local_package, config_file, profile, preserve_vpc):
 )
 @click.option(
     '--requirements',
-    default=None,
+    default='requirements.txt',
     type=click.Path(),
     help='Install all packages defined in supplied requirements file',
 )
@@ -181,7 +181,7 @@ def upload(requirements, local_package, config_file, profile):
 )
 @click.option(
     '--requirements',
-    default=None,
+    default='requirements.txt',
     type=click.Path(),
     help='Install all packages defined in supplied requirements file',
 )
