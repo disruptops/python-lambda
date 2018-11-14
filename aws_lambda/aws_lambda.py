@@ -709,6 +709,9 @@ def read_cfg(path_to_config_file, profile_name):
         cfg['profile'] = profile_name
     elif 'AWS_PROFILE' in os.environ:
         cfg['profile'] = os.environ['AWS_PROFILE']
+    for key, val in cfg.items():
+        cfg[key] = get_environment_variable_value(val)
+
     return cfg
 
 

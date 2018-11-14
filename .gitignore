@@ -63,3 +63,6 @@ target/
 *.iml
 # vim swap files
 .*.sw?
+
+.vscode/
+.venv/
