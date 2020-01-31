@@ -72,6 +72,7 @@ def cleanup_old_versions(
         else:
             version_numbers = [elem.get('Version') for elem in
                                versions[1:-keep_last_versions]]
+            print(f'Deleting {len(version_numbers)} old versions')
             for version_number in version_numbers:
                 try:
                     client.delete_function(
