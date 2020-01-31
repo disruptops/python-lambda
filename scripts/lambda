@@ -127,9 +127,9 @@ def invoke(event_file, config_file, profile, verbose):
 )
 @click.option(
     '--keep-last',
-    type=int,
     default=3,
-    prompt='Please enter the number of recent versions to keep',
+    type=int,
+    help='Please enter the number of recent versions to keep',
 )
 def deploy(requirements, local_package, config_file, profile, preserve_vpc, keep_last):
     aws_lambda.deploy(
@@ -206,9 +206,9 @@ def upload(requirements, local_package, config_file, profile):
 )
 @click.option(
     '--keep-last',
-    type=int,
     default=3,
-    prompt='Please enter the number of recent versions to keep',
+    type=int,
+    help='Please enter the number of recent versions to keep',
 )
 def deploy_s3(requirements, local_package, config_file, profile, keep_last):
     aws_lambda.deploy_s3(
